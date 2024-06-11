@@ -1,9 +1,10 @@
 #!/usr/bin/python3
+
 import argparse
 import collections
 import configparser
 from datetime import datetime
-import grp, pwd  #
+import grp, pwd 
 from fnmatch import fnmatch
 import hashlib
 from math import ceil
@@ -13,14 +14,14 @@ import sys
 import zlib
 
 # provide the manual description
-argparser = argparser.ArgumentParser(description="The ALX student content tracker")
+argparser = argparse.ArgumentParser(description="The ALX student content tracker")
 
 # handle the subcommands such as init , commit etc
-subcommands = argparser.add_suparsers(title="Commands", dest="commands")
-subcommands.required = True
+argsubparsers = argparser.add_subparsers(title="Commands", dest="command")
+argsubparsers.required = True
 
 def main(argv=sys.argv[1:]):
-    args = argparser.parser_args(argv)
+    args = argparser.parse_args(argv)
     match args.command:
         case "add"             : cmd_add(args)
         case "cat-file"        : cmd_cat_file(args)
