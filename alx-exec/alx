@@ -1,5 +1,0 @@
-#!/usr/bin/env python3
-
-import alx_student
-import alx_repo
-alx_student.main()
