@@ -1,0 +1,7 @@
+alxsetup.py
+alxgit/alxlib.py
+alxgit.egg-info/PKG-INFO
+alxgit.egg-info/SOURCES.txt
+alxgit.egg-info/dependency_links.txt
+alxgit.egg-info/entry_points.txt
+alxgit.egg-info/top_level.txt
