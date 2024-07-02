@@ -1,5 +1,0 @@
-#!/usr/bin/env python3
-
-"""This is an executable file for the alx command """
-import alxlib
-alxlib.main()
