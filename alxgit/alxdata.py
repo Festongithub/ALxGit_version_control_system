@@ -13,7 +13,7 @@ def hash_object(alxdata, type_='blob'):
     oid = hashlib.sha1 (alxdata).hexdigest()
     with open(f'{GIT_DIR}/objects/{oid}', 'wb') as out:
         out.write(alxdata)
-        outwrite(obj)
+        out.write(obj)
 
     return oid
 
