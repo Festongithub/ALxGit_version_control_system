@@ -8,6 +8,25 @@ def init():
     os.makedirs (GIT_DIR)
     os.makedirs (f'{GIT_DIR}/objects')
 
+#def set_HEAD(oid):
+    #"""sets the head"""
+    #with open(f'{GIT_DIR}/HEAD', 'w') as f:
+        #f.write(oid)
+
+def update_ref(ref, oid):
+    ref_path = f'{GIT_DIR}/{ref}'
+    os.makedirs(os.path.dirname(ref_path), exist_ok=True)
+    with open(ref_path, 'w') as f:
+        f.write(oid)
+
+def get_ref(ref):
+    """Gets the head of commit"""
+    ref_path = f'{GIT_DIR}/{ref}'
+    if os.path.isfile(ref_path):
+        with open(ref_path) as f:
+            return f.read().strip()
+
+
 def hash_object(alxdata, type_='blob'):
     obj = type_.encode() + b'\x00' + alxdata
     oid = hashlib.sha1 (alxdata).hexdigest()

@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
 import argparse
-import os
-import sys
 from . import alxbase
 from . import alxdata
+import os
+import sys
+import textwrap
+
 
 def main():
     """Test for the alxgit command"""
@@ -31,6 +33,28 @@ def parse_args():
     write_tree_parser = commands.add_parser('write-tree')
     write_tree_parser.set_defaults(func=write_tree)
 
+    read_tree_parser = commands.add_parser('read-tree')
+    read_tree_parser.set_defaults(func=read_tree)
+    read_tree_parser.add_argument('tree')
+
+    commit_parser = commands.add_parser('commit')
+    commit_parser.set_defaults(func=commit)
+    commit_parser.add_argument('-m', '--message', required=True)
+
+    log_parser = commands.add_parser('log')
+    log_parser.set_defaults(func=log)
+    log_parser.add_argument('oid', nargs='?')
+
+    checkout_parser = commands.add_parser('checkout')
+    checkout_parser.set_defaults(func=checkout)
+    checkout_parser.add_argument('oid')
+
+    tag_parser = commands.add_parser('tag')
+    tag_parser.set_defaults(func=tag)
+    tag_parser.add_argument('name')
+    tag_parser.add_argument('oid', nargs='?')
+    
+
     
     return parser.parse_args ()
 
@@ -54,6 +78,34 @@ def cat_file(args):
 
 def write_tree(args):
     """Create the working directory"""
-    base.write_tree()
+    alxbase.write_tree()
     print(base.write_tree())
 
+def read_tree(args):
+    alxbase.read_tree(args.tree)
+
+def commit(args):
+    """Create commit message"""
+    print(alxbase.commit(args.message))
+
+
+def log(args):
+    """list the log in alxgit"""
+    #oid = alxdata.get_HEAD()
+    oid = args.oid or alxdata.get_ref('HEAD')
+    while oid:
+        commit = alxbase.get_commit(oid)
+
+        print(f'commit {oid}\n')
+        print(textwrap.indent(commit.message, '  '))
+        print('')
+
+        oid = commit.parent
+
+def checkout(args):
+    """Check commit messages"""
+    alxbase.checkout(args.oid)
+
+def tag(args):
+    oid = args.oid or alxdata.get_ref('HEAD')
+    alxbase.create_tag(args.name, oid)
