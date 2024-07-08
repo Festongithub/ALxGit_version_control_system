@@ -4,18 +4,21 @@
 
 import argparse
 import os
+import subprocess
 import sys
 import textwrap
 
-
 from . import alxbase
 from . import alxdata
+from . import alxdiff
 
 def main():
+    """Run arguments on command line"""
     args = parse_args()
     args.func(args)
 
 def parse_args():
+    """Parse the arguments"""
     parser = argparse.ArgumentParser()
 
     commands = parser.add_subparsers(dest = 'command')
@@ -47,24 +50,38 @@ def parse_args():
 
     log_parser = commands.add_parser('log')
     log_parser.set_defaults(func=log)
-    log_parser.add_argument('oid', type=oid,  nargs='?')
+    log_parser.add_argument('oid', default= '@',  type=oid,  nargs='?')
 
     checkout_parser = commands.add_parser('checkout')
     checkout_parser.set_defaults(func=checkout)
-    checkout_parser.add_argument('oid', type=oid)
+    checkout_parser.add_argument('commit')
 
     tag_parser = commands.add_parser('tag')
     tag_parser.set_defaults(func=tag)
     tag_parser.add_argument('name')
-    tag_parser.add_argument('oid', type=oid,  nargs='?')
-    
+    tag_parser.add_argument('oid', default = '@',  type=oid,  nargs='?')
 
+    branch_parser = commands.add_parser('branch')
+    branch_parser.set_defaults(func=branch)
+    branch_parser.add_argument('name', nargs='?')
+    branch_parser.add_argument('start_point', default = '@',  type=oid,  nargs='?')
+    
+    k_parser = commands.add_parser('k')
+    k_parser.set_defaults(func=k)
+
+    status_parser = commands.add_parser('status')
+    status_parser.set_defaults(func=status)
+
+    reset_parser = commands.add_parser('reset')
+    reset_parser.set_defaults(func=reset)
+    reset_parser.add_argument('commit', type=oid)
+    
 
     return parser.parse_args()
 
 def init(args):
     #print('Hello world!')
-    alxdata.init()
+    alxbase.init()
     print(f'Initialized empty alxgit repository in {os.getcwd()}/{alxdata.GIT_DIR}')
 
 def hash_object(args):
@@ -89,23 +106,103 @@ def commit(args):
     """write commit"""
     print(alxbase.commit(args.message))
 
+
+def print_commit(oid, commit, refs=None):
+    """print commit message"""
+    refs_str = f'({", ".join(refs)})' if refs else ''
+    print(f'commit {oid}{refs_str}\n')
+    print(textwrap.indent(commit.message, '   '))
+    print(' ')
+
+
 def log(args):
     """walks the list of commit and print them"""
-    oid = args.oid or alxdata.get_ref('HEAD')
-    while oid:
+    refs = {}
+    for refname, ref in alxdata.iter_refs():
+        refs.setdefault(ref.value, []).append(refname)
+
+    for oid in alxbase.iter_commits_and_parents({args.oid}):
         commit = alxbase.get_commit(oid)
+        print_commit(oid, commit, refs.get(oid))
 
-        print(f'commit{oid}\n')
-        print(textwrap.indent(commit.message, ' '))
-        print('')
+        #refs_str = f '({", ".join(refs[oid])})' if oid in refs else ''
+        #print(f'commit {oid}{refs_str}\n')
+        #print(textwrap.indent(commit.message, '   '))
+        #print('')
 
-        oid = commit.parent
+def show(args):
+    """show commit messages"""
+    if not args.oid:
+        return
+    commit = alxbase.get_commit(args.oid)
+    parent_tree = None
+    if commit.parent:
+        parent_tree = alxbase.get_commit(commit.parent).tree
+
+    print_commit(args.oid, commit)
+    result = alxdiff.alxdiff_trees(
+            alxbase.get_tree(parent_tree), alxbase.get_tree(commit.tree))
+    #print(result)
+    sys.stdout.flush()
+    sys.stdout.buffer.write(result)
+
+    
 def checkout(args):
     """implement alxgit chekout"""
-    alxbase.checkout(args.oid)
-
+    alxbase.checkout(args.commit)
 
 def tag(args):
     """implement create tag function"""
     oid = args.oid or alxdata.get_ref('HEAD')
-    alxbase.create_tag(args.name, oid)
+    alxbase.create_tag(args.name, args.oid)
+
+def branch(args):
+    """Alxgit branch"""
+    #alxbase.create_branch(args.name, args.start_point)
+    if not args.name:
+        current = alxbase.get_branch_name()
+        for branch in alxbase.iter_branch_names():
+            prefix = '*' if branch == current else ' '
+            print(f'{prefix} {branch}')
+        else:
+            alxbase.create_branch(args.name, args.start_point)
+            print(f'Branch {args.name} created at {args.start_point[:10]}')
+    
+
+def k(args):
+    """Visualisation tool for the commit"""
+    dot = 'digraph commits {\n'
+
+    oids = set()
+    for refname, ref in alxdata.iter_refs(deref=False):
+        dot += f'"{refname}" [shape=note]\n'
+        dot += f' "{refname}" -> "{ref.value}"\n'
+        if not ref.symbolic:
+            oids.add(ref.value)
+
+    for oid in alxbase.iter_commits_and_parents(oids):
+        commit = alxbase.get_commit(oid)
+        dot += f' "{oid}" [shape=box style=filled label="{oid[:10]}"]\n'
+        if commit.parent:
+            dot += f' "{oid}" -> "{commit.parent}"\n'
+
+    dot += '}'
+    print(dot)
+
+    with subprocess.Popen(
+            ['dot', '-Tgtk', '/dev/stdin'],
+            stdin=subprocess.PIPE) as proc:
+        proc.communicate(dot.encode())
+
+def status(args):
+    """alxgit status"""
+    HEAD = alxbase.get_oid('@')
+    branch = alxbase.get_branch_name()
+    if branch:
+        print(f'On branch {branch}')
+    else:
+        print(f'HEAD detached at {HEAD[:10]}')
+
+def reset(args):
+    """Move HEAD"""
+    alxbase.reset(args.commit)

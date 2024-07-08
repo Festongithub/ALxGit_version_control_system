@@ -2,11 +2,19 @@
 
 """The mdoule has the higher logic of alxgit"""
 
-from . import alxdata
-from collections import namedtuple
+from collections import deque, namedtuple
 import itertools
 import operator
 import os
+import string
+
+from . import alxdata
+
+def init():
+    """initialize different aspects of repository"""
+    alxdata.init()
+    alxdata.update_ref('HEAD', alxdata.RefValue(symbolic=True, value='refs/heads/master'))
+
 
 def write_tree(directory='.'):
     """Takes the current working directory and store it to the object database"""
@@ -57,6 +65,17 @@ def get_tree(oid, alxbase_path=''):
             assert False, f'Unknown tree entry {type_}'
     return result
 
+def get_working_tree():
+    """compare working tree to a commit"""
+    res = {}
+    for root, _, filenames in os.walk('.'):
+        for filename in filenames:
+            path = os.path.relpath(f'{root}/{filename}')
+            if is_ignored(path) or not os.path.isfile(path):
+                continue
+            with open(path, 'rb') as f:
+                result[path] = alxdata.hash_object(f.read()))
+        return result
 
 def empty_current_directory():
     """Delete all existing stuff before reading"""
@@ -86,7 +105,7 @@ def commit(message):
     """write commit"""
     commit = f'tree {write_tree()}\n'
 
-    HEAD = alxdata.get_ref('HEAD')
+    HEAD = alxdata.get_ref('HEAD').value
     if HEAD:
         commit += f'parent {HEAD}\n'
 
@@ -95,19 +114,54 @@ def commit(message):
 
     oid = alxdata.hash_object(commit.encode(), 'commit')
     
-    alxdata.update_ref('HEAD', oid)
+    alxdata.update_ref('HEAD', alxdata.RefValue(symbolic=False, value=oid))
 
     return oid
 
-def checkout(oid):
+def checkout(name):
     """implement alxgit checkout"""
+    oid = get_oid(name)
     commit = get_commit(oid)
     read_tree(commit.tree)
-    alxdata.update_ref('HEAD', oid)
+
+    if is_branch(name):
+        HEAD = alxdata.RefValue(symbolic=True, value=f'refs/heads/{name}')
+    else:
+        HEAD = alxdata.RefValue(symbolic=False, value=oid)
+
+    alxdata.update_ref('HEAD', HEAD, deref=False)
 
 def create_tag(name, oid):
     """creates tag"""
-    alxdata.update_ref(f'refs/tags/{name}', oid)
+    alxdata.update_ref(f'refs/tags/{name}', alxdata.RefValue(symbolic=False, value=oid))
+
+def iter_branch_names():
+    """show all branches"""
+    for refname, _ in alxdata.iter_ref('refs/heads/'):
+        yield os.path.relpath(refname, 'refs/heads/')
+
+
+def is_branch(branch):
+    """check if it is branch"""
+    return alxdata.get_ref(f'refs/heads/{branch}').value is not None
+
+def reset(oid):
+    """move HEAD to an OID of choice to undo the commit"""
+    alxdata.update_ref('HEAD', alxdata.RefValue(symbolic=False, value=oid))
+
+
+def create_branch(name, oid):
+    """Create new branch"""
+    alxdata.update_ref(f'refs/heads/{name}', alxdata.RefValue(symbolic=False, value=oid))
+
+def get_branch_name():
+    """Print current branch name"""
+    HEAD = alxdata.get_ref('HEAD', deref=False)
+    if not HEAD.symbolic:
+        return None
+    HEAD = HEAD.value
+    assert HEAD.startswith('refs/heads/')
+    return os.path.relpath(HEAD, 'refs/heads')
 
 Commit = namedtuple('commit', ['tree', 'parent', 'message'])
 
@@ -118,7 +172,7 @@ def get_commit(oid):
     commit = alxdata.get_object(oid, 'commit').decode()
     lines = iter(commit.splitlines())
     for line in itertools.takewhile(operator.truth, lines):
-        key,value = line.split(' ', 1)
+        key, value = line.split(' ', 1)
         if key == 'tree':
             tree = value
         elif key == 'parent':
@@ -129,9 +183,40 @@ def get_commit(oid):
     message ='\n'.join(lines)
     return Commit(tree=tree, parent=parent, message=message)
 
+def iter_commits_and_parents(oids):
+    """Iterate commands"""
+    oids = deque(oids)
+    visited = set()
+
+    while oids:
+        oid = oids.popleft()
+        if not oid or oid in visited:
+            continue
+        visited.add(oid)
+        yield oid
+
+        commit = get_commit(oid)
+        oids.appendleft(commit.parent)
+
 def get_oid(name):
     """resolves a name to an OID"""
-    return alxdata.get_ref(name) or name
+    if name == '@': name == 'HEAD'
+    #return alxdata.get_ref(name) or name
+    refs_to_test = [
+            f'{name}',
+            f'refs/{name}',
+            f'refs/tags/{name}',
+            f'refs/heads/{name}',
+            ]
+
+    for ref in refs_to_test:
+        if alxdata.get_ref(ref, deref=False).value:
+            return alxdata.get_ref(ref).value
+    #name is SHA1
+    is_hex = all(c in string.hexdigits for c in name)
+    if len(name) == 40 and is_hex:
+        return name
+    assert False, f'Unknown name {name}'
 
 def is_ignored(path):
     """ingnores .alxgit file"""
