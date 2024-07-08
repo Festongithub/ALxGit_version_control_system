@@ -74,8 +74,9 @@ def get_working_tree():
             if is_ignored(path) or not os.path.isfile(path):
                 continue
             with open(path, 'rb') as f:
-                result[path] = alxdata.hash_object(f.read()))
+                result[path] = alxdata.hash_object(f.read())
         return result
+
 
 def empty_current_directory():
     """Delete all existing stuff before reading"""
@@ -130,6 +131,10 @@ def checkout(name):
         HEAD = alxdata.RefValue(symbolic=False, value=oid)
 
     alxdata.update_ref('HEAD', HEAD, deref=False)
+
+def merge(other):
+    pass
+
 
 def create_tag(name, oid):
     """creates tag"""
@@ -216,7 +221,8 @@ def get_oid(name):
     is_hex = all(c in string.hexdigits for c in name)
     if len(name) == 40 and is_hex:
         return name
-    assert False, f'Unknown name {name}'
+
+    assert False,  f'Unknown name {name}'
 
 def is_ignored(path):
     """ingnores .alxgit file"""
