@@ -2,10 +2,24 @@
 
 """This module manages data in alxgit"""
 import hashlib
+import json
 import os
-from collections import namedtuple
+import shutil
 
-GIT_DIR = '.alxgit'
+from collections import namedtuple
+from contextlib import contextmanager
+
+GIT_DIR = None
+
+
+@contextmanager
+def change_alxgit_dir(new_dir):
+    """Allow alxgit directory change"""
+    global GIT_DIR
+    old_dir = GIT_DIR
+    GIT_DIR = f'{newe_dir}/.alxgit'
+    yield
+    GIT_DIR = old_dir
 
 def init():
     os.makedirs(GIT_DIR)
@@ -16,7 +30,7 @@ RefValue = namedtuple('RefValue', ['symbolic', 'value'])
 def update_ref(ref, value, deref=True):
     """sets the HEAD"""
     #assert not value.symbolic
-    ref = get_ref_internale(ref, deref)[0]
+    ref = get_ref_internal(ref, deref)[0]
 
     assert value.value
     if value.symbolic:
@@ -32,6 +46,11 @@ def update_ref(ref, value, deref=True):
 def get_ref(ref, deref=True):
     """gets head of commit message"""
     return get_ref_internal(ref, deref)[1]
+
+def delete_ref(ref, deref=True):
+    """Removes an existing ref"""
+    ref get_ref_internal(ref, deref)[0]
+    os.remove(f'{GIT_DIR}/{ref}')
 
 def get_ref_internal(ref, deref):
     """dereference refs for reading and writing"""
@@ -49,7 +68,7 @@ def get_ref_internal(ref, deref):
 
 def iter_refs(prefix='', deref=True):
     """visualisation for mess"""
-    refs = ['HEAD']
+    refs = ['HEAD', 'MERGE_HEAD']
     for root, _, filenames in os.walk(f'{GIT_DIR}/refs/'):
         root = os.path.relpath(root, GIT_DIR)
         refs.extend(f'{root}/{name}' for name in filenames)
@@ -57,8 +76,18 @@ def iter_refs(prefix='', deref=True):
     for refname in refs:
         if not refname.startswith(prefix):
             continue
-        yield refname, get_ref(refname, deref=deref)
-
+        ref = get_ref(refname, deref=deref)
+        if ref.value:
+            yield refname, ref
+@contextmanager
+def get_index():
+    index = {}
+    if os.path.isfile(f'{GIT_DIR}/index'):
+        with open(f'{GIT_DIR}/index') as f:
+            index = json.load(f)
+        yield index
+    with open(f'{GIT_DIR}/index', 'w') as f:
+        json.dump(index, f)
 
 def hash_object(data, type_='alxblob'):
     """hashing file"""
@@ -80,3 +109,20 @@ def get_object(oid, expected='alxblob'):
     if expected is not None:
         assert type_ == expected, f'Expected {expected}, got{type_}'
     return content
+
+
+def object_exists(oid):
+    return os.path.isfile(f'{GIT_DIR}/objects/{oid}')
+
+def fetch_object_if_missing(oid, remote_alxgit_dir):
+    if object_exists(oid):
+        return
+    remote_alxgit_dir += '.alxgit'
+    shutil.copy(f'remote_alxgit_dir}/objects{oid}',
+                f'{GIT_DIR}/objects/{oid}')
+
+def push_object(oid, remote_alxgit_dir):
+    remote_alxgit_dir += '/.alxgit'
+    shutil.copy(f'{GIT_DIR}/objects/{oid}',
+                f'{remote_alxgit_dir}/objects/{oid}')
+

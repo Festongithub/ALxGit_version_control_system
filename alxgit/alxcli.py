@@ -11,12 +11,14 @@ import textwrap
 from . import alxbase
 from . import alxdata
 from . import alxdiff
+from . import remote_model
 
 def main():
     """Run arguments on command line"""
-    args = parse_args()
-    args.func(args)
-
+    with alxdata.change_alxgit_dir('.'):
+        args = parse_args()
+        args.func(args)
+        
 def parse_args():
     """Parse the arguments"""
     parser = argparse.ArgumentParser()
@@ -57,7 +59,8 @@ def parse_args():
 
     diff_parser = commands.add_parser('diff')
     diff_parser.set_defaults(func=diff)
-    diff_parser.add_argument('commit', default='@', type=oid, nargs='?')
+    diff_parser.add_argument('--cached',action='store_true')
+    diff_parser.add_argument('commit', nargs='?')
 
     checkout_parser = commands.add_parser('checkout')
     checkout_parser.set_defaults(func=checkout)
@@ -87,6 +90,22 @@ def parse_args():
     merge_parser.set_defaults(func=merge)
     merge_parser.add_argument('commit', type=oid)
 
+    merge_base_parser = commands.add_parser('merge-base')
+    merge_base_parser.set_defaults(func=merge_base)
+    merge_base_parser.add_argument('commit1', type=oid)
+    merge_base_parser.add_argument('commit2', type=oid)
+
+    fetch_parser = commands.add_parser('fetch')
+    fetch_parser.set_defaults(func=fetch)
+    fetch_parser.add_argument('remote')
+
+    push_parser = commands.add_parser('push')
+    push_parser.set_defaults(func=push)
+    push_parser.add_argument('push')
+
+    add_parser = commands.add_parser('add')
+    checkout_parser.set_defaults(func=add)
+    checkout_parser.add_argument('file', nargs='+')
     
     return parser.parse_args()
 
@@ -147,8 +166,8 @@ def show(args):
         return
     commit = alxbase.get_commit(args.oid)
     parent_tree = None
-    if commit.parent:
-        parent_tree = alxbase.get_commit(commit.parent).tree
+    if commit.parents:
+        parent_tree = alxbase.get_commit(commit.parents[0]).tree
 
     print_commit(args.oid, commit)
     result = alxdiff.alxdiff_trees(
@@ -159,9 +178,21 @@ def show(args):
 
 def diff(args):
     """comapare working tree to a commit"""
-    tree = args.commit and alxbase.get_commit(args.commit).tree
+    oid = args.commit and alxbase.get_commit(args.commit)
 
-    result = alxdiff.diff_tree(alxbase.get_tree(tree), alxbase.get_working_tree())
+    if args.commit:
+        tree_from = alxbase.get_tree(oid and alxbase.get_commit(oid).tree)
+    if args.cached:
+        tree_to = alxbase.getindex_tree()
+        if not args.commit:
+            oid = alxbase.get_oid('@')
+            tree_from = alxbase.get_tree(oid and alxbase.get_commit(oid).tree)
+        else:
+            tree_to = alxbase.ge_working_tree()
+            if not args.commit:
+                tree_from = alxbase.get_index_tree()
+
+    result = alxdiff.diff_tree(tree_from, tree_to)
     sys.stdout.flush()
     sys.stdout.buffer.write(result)
 
@@ -202,8 +233,9 @@ def k(args):
     for oid in alxbase.iter_commits_and_parents(oids):
         commit = alxbase.get_commit(oid)
         dot += f' "{oid}" [shape=box style=filled label="{oid[:10]}"]\n'
-        if commit.parent:
+        for parent in commit.parents:
             dot += f' "{oid}" -> "{commit.parent}"\n'
+
 
     dot += '}'
     print(dot)
@@ -221,10 +253,18 @@ def status(args):
         print(f'On branch {branch}')
     else:
         print(f'HEAD detached at {HEAD[:10]}')
+    MERGE_HEAD = alxdata.get-ref('MERGE_HEAD').value
+    if MERGE_HEAD:
+        print(f'Merging with {MERGE_HEAD[:10]}')
 
     print('\nChanges to be committed:\n')
     HEAD_tree = HEAD and alxbase.get_commit(HEAD).tree
     for path, action in alxdiff.iter_changed_files(alxbase.get_tree(HEAD_tree), alxbase.get_working_tree()):
+        print(f'{action:>12}: {path}')
+
+    print('\nChanges not staged for commit:\n')
+    for path, action in alxdiff.iter_changed_files(alxbase.get_index_tree(),
+                                                   alxbase.get_working_tree()):
         print(f'{action:>12}: {path}')
 
 
@@ -235,3 +275,18 @@ def reset(args):
 def merge(args):
     """alxgit merge function"""
     alxbase.merge(args.commit)
+
+def merge_base(args):
+    """receives two commits OIDs and find their common ancestor"""
+    print(alxbase.get_merge_base(args.commit1, args.commit2))
+
+def fetch(args):
+    """print remote refs"""
+    remote_model.fetch(args.remote_model)
+def push(args):
+    """push commit"""
+    remote_model.push(args.remote, f'refs/heads/{args.branch}')
+
+def add(args):
+    """add files to the repository"""
+    alxbase.add(args.files)
