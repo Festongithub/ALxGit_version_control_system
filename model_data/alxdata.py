@@ -17,7 +17,7 @@ def change_alxgit_dir(new_dir):
     """Allow alxgit directory change"""
     global GIT_DIR
     old_dir = GIT_DIR
-    GIT_DIR = f'{newe_dir}/.alxgit'
+    GIT_DIR = f'{new_dir}/.alxgit'
     yield
     GIT_DIR = old_dir
 
@@ -49,7 +49,7 @@ def get_ref(ref, deref=True):
 
 def delete_ref(ref, deref=True):
     """Removes an existing ref"""
-    ref get_ref_internal(ref, deref)[0]
+    ref = get_ref_internal(ref, deref)[0]
     os.remove(f'{GIT_DIR}/{ref}')
 
 def get_ref_internal(ref, deref):
@@ -79,6 +79,7 @@ def iter_refs(prefix='', deref=True):
         ref = get_ref(refname, deref=deref)
         if ref.value:
             yield refname, ref
+
 @contextmanager
 def get_index():
     index = {}
@@ -118,7 +119,7 @@ def fetch_object_if_missing(oid, remote_alxgit_dir):
     if object_exists(oid):
         return
     remote_alxgit_dir += '.alxgit'
-    shutil.copy(f'remote_alxgit_dir}/objects{oid}',
+    shutil.copy(f'{remote_alxgit_dir}/objects{oid}',
                 f'{GIT_DIR}/objects/{oid}')
 
 def push_object(oid, remote_alxgit_dir):

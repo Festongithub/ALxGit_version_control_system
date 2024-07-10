@@ -2,7 +2,7 @@
 
 """Performs the alxgit fetch """
 import os
-from . import alxdata
+from model_data  import alxdata
 from . import alxbase
 
 REMOTE_REFS_BASE = 'refs/heads/'

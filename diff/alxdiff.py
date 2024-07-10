@@ -4,13 +4,12 @@ import subprocess
 from collections import defaultdict
 from tempfile import NamedTemporaryFile as Temp
 
-from . import alxdata
+from model_data import alxdata
 
 
 """List changed files in commit"""
-from collections import defaultdict
 
-def compare_trees(*tree):
+def compare_trees(*trees):
     """compute differences between objects"""
     entries = defaultdict(lambda: [None] * len (trees))
     for i, tree in enumerate(trees):

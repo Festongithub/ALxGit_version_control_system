@@ -9,8 +9,8 @@ import sys
 import textwrap
 
 from . import alxbase
-from . import alxdata
-from . import alxdiff
+from model_data import alxdata
+from diff import alxdiff
 from . import remote_model
 
 def main():
@@ -39,7 +39,7 @@ def parse_args():
     cat_file_parser.set_defaults(func=cat_file)
     cat_file_parser.add_argument('object', type=oid)
     
-    write_tree_parser = commands.add_parser('write-file')
+    write_tree_parser = commands.add_parser('write-tree')
     write_tree_parser.set_defaults(func=write_tree)
 
     read_tree_parser = commands.add_parser('read-tree')
@@ -170,7 +170,7 @@ def show(args):
         parent_tree = alxbase.get_commit(commit.parents[0]).tree
 
     print_commit(args.oid, commit)
-    result = alxdiff.alxdiff_trees(
+    result = alxdiff.diff_trees(
             alxbase.get_tree(parent_tree), alxbase.get_tree(commit.tree))
     #print(result)
     sys.stdout.flush()
@@ -234,7 +234,7 @@ def k(args):
         commit = alxbase.get_commit(oid)
         dot += f' "{oid}" [shape=box style=filled label="{oid[:10]}"]\n'
         for parent in commit.parents:
-            dot += f' "{oid}" -> "{commit.parent}"\n'
+            dot += f' "{oid}" -> "{parent}"\n'
 
 
     dot += '}'

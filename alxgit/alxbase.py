@@ -8,42 +8,46 @@ import operator
 import os
 import string
 
-from . import alxdata
-from . import alxdiff
+from model_data import alxdata
+from diff import alxdiff
 
 
 def init():
     """initialize different aspects of repository"""
     alxdata.init()
-    alxdata.update_ref('HEAD', alxdata.RefValue(symbolic=True, value='refs/heads/master'))
+    alxdata.update_ref('HEAD', alxdata.RefValue(symbolic=True,
+                       value='refs/heads/master'))
 
-
-def write_tree(directory='.'):
+def write_tree():
     """Takes the current working directory and store it to the object database"""
-    tree_as_index = {}
+    index_as_tree = {}
     with alxdata.get_index() as index:
         for path, oid in index.items():
             path = path.split('/')
             dirpath, filename = path[:-1], path[-1]
 
-            current = tree_as_index
+            current = index_as_tree
             for dirname in dirpath:
                 current = current.setdefault(dirname, {})
             current[filename] = oid
-        def write_tree_recursive(tree_dict):
-            entries = []
-            for name, value in tree_dict:
+    
+    def write_tree_recursive(tree_dict):
+        entries = []
+        for name, value in tree_dict.items():
+            if type(value) is dict:
                 type_ = 'tree'
                 oid = write_tree_recursive(value)
             else:
                 type_ = 'alxblob'
                 oid = value
-            entries.append((name, oid, tyep))
-        
+            entries.append((name, oid, type_))
+
         tree = ''.join(f'{type_} {oid} {name}\n'
-                       for name, oid, type_ in sorted(entries))
+                   for name, oid, type_
+                   in sorted(entries))
         return alxdata.hash_object(tree.encode(), 'tree')
-    return write_tree_recursive(tree_as_index)
+    return write_tree_recursive(index_as_tree)
+
 
 def iter_tree_entries(oid):
     """Takes an OID of a tree, tokenize it line-by-line and yield raw string values
@@ -264,8 +268,8 @@ def iter_commits_and_parents(oids):
         yield oid
 
         commit = get_commit(oid)
-        oids.extendleft(commit.parents)
-        oid.extend(commit.parents[1:])
+        oids.extendleft(commit.parents[:1])
+        oids.extend(commit.parents[1:])
 
 def iter_objects_in_commits(oids):
     """Takes a list of commit OIDs"""
@@ -304,8 +308,8 @@ def get_oid(name):
     is_hex = all(c in string.hexdigits for c in name)
     if len(name) == 40 and is_hex:
         return name
+    assert False, f'Unknown name {name}'
 
-    assert False,  f'Unknown name {name}'
 def add(filenames):
     def add_file(filename):
         filename = os.path.relpath(filename)
