@@ -90,7 +90,7 @@ def get_index():
     with open(f'{GIT_DIR}/index', 'w') as f:
         json.dump(index, f)
 
-def hash_object(data, type_='alxblob'):
+def hash_object(data, type_='blob'):
     """hashing file"""
     obj = type_.encode() + b'\x00' + data
     oid = hashlib.sha1(obj).hexdigest()
@@ -99,7 +99,7 @@ def hash_object(data, type_='alxblob'):
     return oid
 
 
-def get_object(oid, expected='alxblob'):
+def get_object(oid, expected='blob'):
     """returns oid of hashed objects"""
     with open(f'{GIT_DIR}/objects/{oid}', 'rb') as f:
         obj =  f.read()
