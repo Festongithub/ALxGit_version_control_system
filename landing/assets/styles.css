@@ -74,9 +74,27 @@ main {
     margin-bottom: 50px;
 }
 
-img {
+#st{
 	max-width: 100px;
 	max-height: 150px;
     float: left;
 }
 
+.student{
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+    width: 400px;
+    height: 200px;
+}
+.inst.text {
+    position: absolute;
+    text-align: center;
+}
+.inst.p{
+    text-align: left;
+    float: inline-start;
+    font-size: medium;
+    font-family: Arial, Helvetica, sans-serif;
+    font-style: italic;
+}
