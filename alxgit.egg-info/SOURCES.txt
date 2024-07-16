@@ -9,11 +9,6 @@ alxgit.egg-info/SOURCES.txt
 alxgit.egg-info/dependency_links.txt
 alxgit.egg-info/entry_points.txt
 alxgit.egg-info/top_level.txt
-alxgit/__pycache__/alxbase.cpython-311.pyc
-alxgit/__pycache__/alxcli.cpython-311.pyc
-alxgit/__pycache__/alxdata.cpython-311.pyc
-alxgit/__pycache__/alxdiff.cpython-311.pyc
-alxgit/__pycache__/remote_model.cpython-311.pyc
 diff/alxdiff.py
 diff/__pycache__/alxdiff.cpython-311.pyc
 landing/404.html
@@ -23,6 +18,9 @@ landing/_config.yml
 landing/about.markdown
 landing/index.html
 landing/index.markdown
+landing/.alxgit/HEAD
+landing/.alxgit/objects/68147c80b55a380410445243c279eeabd691da48
+landing/.alxgit/objects/d00cc49ff432506cb2dcffff2172286f48e4cb75
 landing/_posts/2024-07-15-welcome-to-jekyll.markdown
 landing/assets/styles.css
 landing/images/1alxgit.jpeg
