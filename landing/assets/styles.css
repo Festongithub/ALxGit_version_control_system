@@ -13,6 +13,34 @@ header {
     text-align: center;
 }
 
+nav {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    background-color: #f2f2f2; /* Adjust background color as needed */
+    padding: 10px; /* Add padding for spacing */
+
+  }
+  
+  nav ul {
+    list-style: none;
+    display: flex;
+    top: 0;
+  }
+  
+  nav li {
+    margin-right: 20px;
+  }
+  
+  nav a {
+    text-decoration: none;
+    color: #333;
+  }
+  
+  nav a:hover {
+    color: #007bff; /* Change hover color */
+  }
+  
 
 #installation.h1 {
     text-align: center;
@@ -99,6 +127,10 @@ main {
     font-size: medium;
     font-family: Arial, Helvetica, sans-serif;
     font-style: italic;
+}
+
+button{
+    text-align: center;
 }
 
 .text {
