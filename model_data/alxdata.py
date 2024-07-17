@@ -21,15 +21,18 @@ def change_alxgit_dir(new_dir):
     yield
     GIT_DIR = old_dir
 
+
 def init():
     os.makedirs(GIT_DIR)
     os.makedirs(f'{GIT_DIR}/objects')
 
+
 RefValue = namedtuple('RefValue', ['symbolic', 'value'])
+
 
 def update_ref(ref, value, deref=True):
     """sets the HEAD"""
-    #assert not value.symbolic
+    # assert not value.symbolic
     ref = get_ref_internal(ref, deref)[0]
 
     assert value.value
@@ -43,14 +46,17 @@ def update_ref(ref, value, deref=True):
     with open(ref_path, 'w') as f:
         f.write(value)
 
+
 def get_ref(ref, deref=True):
     """gets head of commit message"""
     return get_ref_internal(ref, deref)[1]
+
 
 def delete_ref(ref, deref=True):
     """Removes an existing ref"""
     ref = get_ref_internal(ref, deref)[0]
     os.remove(f'{GIT_DIR}/{ref}')
+
 
 def get_ref_internal(ref, deref):
     """dereference refs for reading and writing"""
@@ -66,6 +72,7 @@ def get_ref_internal(ref, deref):
             return get_ref_internal(value, deref=True)
     return ref, RefValue(symbolic=symbolic, value=value)
 
+
 def iter_refs(prefix='', deref=True):
     """visualisation for mess"""
     refs = ['HEAD', 'MERGE_HEAD']
@@ -80,6 +87,7 @@ def iter_refs(prefix='', deref=True):
         if ref.value:
             yield refname, ref
 
+
 @contextmanager
 def get_index():
     index = {}
@@ -89,6 +97,7 @@ def get_index():
         yield index
     with open(f'{GIT_DIR}/index', 'w') as f:
         json.dump(index, f)
+
 
 def hash_object(data, type_='blob'):
     """hashing file"""
@@ -102,7 +111,7 @@ def hash_object(data, type_='blob'):
 def get_object(oid, expected='blob'):
     """returns oid of hashed objects"""
     with open(f'{GIT_DIR}/objects/{oid}', 'rb') as f:
-        obj =  f.read()
+        obj = f.read()
 
     type_, _, content = obj.partition(b'\x00')
     type_ = type_.decode()
@@ -115,6 +124,7 @@ def get_object(oid, expected='blob'):
 def object_exists(oid):
     return os.path.isfile(f'{GIT_DIR}/objects/{oid}')
 
+
 def fetch_object_if_missing(oid, remote_alxgit_dir):
     if object_exists(oid):
         return
@@ -122,8 +132,8 @@ def fetch_object_if_missing(oid, remote_alxgit_dir):
     shutil.copy(f'{remote_alxgit_dir}/objects{oid}',
                 f'{GIT_DIR}/objects/{oid}')
 
+
 def push_object(oid, remote_alxgit_dir):
     remote_alxgit_dir += '/.alxgit'
     shutil.copy(f'{GIT_DIR}/objects/{oid}',
                 f'{remote_alxgit_dir}/objects/{oid}')
-

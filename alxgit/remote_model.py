@@ -2,11 +2,12 @@
 
 """Performs the alxgit fetch """
 import os
-from model_data  import alxdata
+from model_data import alxdata
 from . import alxbase
 
 REMOTE_REFS_BASE = 'refs/heads/'
-LOCAL_REFS_BASE  = 'refs/remote/'
+LOCAL_REFS_BASE = 'refs/remote/'
+
 
 def fetch(remote_path):
     """print remote refs"""
@@ -19,6 +20,7 @@ def fetch(remote_path):
         refname = os.path.relpath(remote_name, REMOTE_REFS_BASE)
         alxdata.update_ref(f'{LOCAL_REFS_BASE}/{refname}',
                            alxdata.RefValue(symbolic=False, value=value))
+
 
 def push(remote_path, refname):
     """Get refs data"""
@@ -33,7 +35,6 @@ def push(remote_path, refname):
     remote_obj = set(alxbase.iter_objects_in_commits(known_rem_refs))
     loc_obj = set(alxbase.iter_objeccts_in_commits({local_ref}))
 
-
     obj_to_push = loc_obj - remote_obj
     # push missing objects
     for oid in obj_to_push:
@@ -43,6 +44,8 @@ def push(remote_path, refname):
         alxdata.update_ref(refname,
                            alxdata.RefValue(symbolic=False, value=loc_ref))
 
+
 def get_remote_refs(remote_path, prefix=''):
     with alxdata.change_alxgit_dir(remote_path):
-        return {refname: ref.value for refname, ref in alxdata.iter_refs(prefix)}
+        return {refname: ref.value for refname,
+                ref in alxdata.iter_refs(prefix)}
