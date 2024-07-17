@@ -26,7 +26,7 @@ description: >- # this means to ignore newlines until "baseurl:"
 The commands take the form of the alxgit [command] for instance alxgit [init] to process an initializing the alxgit repository .
 
 baseurl: "/alxgit" # the subpath of your site, e.g. /blog
-url: "https://github.com/Festongithub/ALxGit_version_control_system" # the base hostname & protocol for your site, e.g. http://example.com
+url: "https://festongithub.github.io/ALxGit_version_control_system/" # the base hostname & protocol for your site, e.g. http://example.com
 twitter_username: @Macron_254
 github_username:  Festongithub
 
