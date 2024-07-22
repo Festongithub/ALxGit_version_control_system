@@ -114,12 +114,13 @@ def parse_args():
 
 
 def init(args):
+    """Initializes the repository"""
     alxbase.init()
-    print(f'Initialized empty alxgit repository in
-          {os.getcwd()}/{alxdata.GIT_DIR}')
+    print(f'Initialized empty alxgit repository in {os.getcwd()}/{alxdata.GIT_DIR}')
 
 
 def hash_object(args):
+    """Gets the hash value of the file"""
     with open(args.file, 'rb') as f:
         print(alxdata.hash_object(f.read()))
 

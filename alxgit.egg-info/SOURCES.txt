@@ -30,4 +30,5 @@ landing/images/photo.jpeg
 landing/images/student.jpeg
 landing/images/ubuntu.jpeg
 model_data/alxdata.py
+model_data/test_alxdata.py
 model_data/__pycache__/alxdata.cpython-311.pyc
